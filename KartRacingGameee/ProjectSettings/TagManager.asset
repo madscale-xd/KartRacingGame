@@ -5,6 +5,11 @@ TagManager:
   serializedVersion: 2
   tags:
   - Ground
+  - Boost
+  - MovingGround
+  - Danger
+  - BarrelDestroyer
+  - Slowdown
   layers:
   - Default
   - TransparentFX

@@ -1,45 +1,65 @@
 using UnityEngine;
+using System.Collections;
 
 public abstract class AbstractKart : MonoBehaviour
 {
     [Header("Speed Settings")]
-    public float acceleration = 10f;
-    public float maxSpeed = 20f;
-    public float turnSpeed = 100f;
-    public float deceleration = 5f;
-    public float driftFactor = 0.95f;
-    public float boostMultiplier = 1.5f;
-    public float bounceForce = 2f; // Added bounce force when steering
-    
+    [SerializeField] protected float acceleration = 10f;
+    [SerializeField] protected float maxSpeed = 20f;
+    [SerializeField] protected float turnSpeed = 100f;
+    [SerializeField] protected float deceleration = 5f;
+    [SerializeField] protected float driftFactor = 0.95f;
+    [SerializeField] protected float boostMultiplier = 1.5f;
+    [SerializeField] protected float boostDuration = 2f; 
+    [SerializeField] protected float slowMultiplier = 0.5f; // Slowdown multiplier
+    [SerializeField] protected float slowDuration = 2f;    // Duration of slowdown effect
+    [SerializeField] protected float bounceForce = 2f; 
+    [SerializeField] protected float controlsDisableTime = 1.5f;
+    private float airTime = 0f;
+    private float downwardForce = 0f;
+    [SerializeField] private float maxDownwardForce = 50f; // Cap for downward force
+    [SerializeField] private float downwardForceIncreaseRate = 10f; // How fast force increases
+
     private Rigidbody rb;
     private float speedInput;
     private float turnInput;
     private bool isDrifting;
+    private bool isBoosting = false; 
+    private bool isSlowed = false; // Track slowdown status
     private float directionChangeCooldown = 0.25f;
     private float lastDirectionChangeTime = 0f;
+    private bool isGrounded = false; 
 
-    private bool isGrounded = false; // Tracks if kart is touching ground
-    
+    private Vector3 platformVelocity = Vector3.zero;
+    private bool controlsDisabled = false;
+    private float originalMaxSpeed;
+    private bool boostActive = false;
+    private bool slowdownActive = false;
+
     void Start()
     {
         rb = GetComponent<Rigidbody>();
-        rb.constraints = RigidbodyConstraints.FreezeRotationZ;
+        rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+        originalMaxSpeed = maxSpeed;
     }
-    
+
     void Update()
     {
         HandleInput();
     }
-    
+
     void FixedUpdate()
     {
         Move();
         Turn();
         ApplyDrift();
+        ApplyExtraGravity();
     }
 
     void HandleInput()
     {
+        if (controlsDisabled) return; 
+
         float previousTurnInput = turnInput;
 
         speedInput = (Input.GetKey(KeyCode.W) ? 1 : 0) - (Input.GetKey(KeyCode.S) ? 1 : 0);
@@ -52,54 +72,42 @@ public abstract class AbstractKart : MonoBehaviour
 
         isDrifting = Input.GetKey(KeyCode.LeftControl);
 
-        // Apply bounce when switching directions, only if grounded
         if (turnInput != 0 && turnInput != previousTurnInput && Time.time - lastDirectionChangeTime >= directionChangeCooldown)
         {
-            if (isGrounded) // Only bounce if the kart is touching ground
+            if (isGrounded) 
             {
                 RaycastHit hit;
-                if (Physics.Raycast(transform.position, -Vector3.up, out hit, 1.5f)) 
+                if (Physics.Raycast(transform.position, -Vector3.up, out hit, 1.5f))
                 {
-                    // Apply bounce **along the normal of the ground** instead of world up
-                    Vector3 bounceDirection = hit.normal; 
-                    rb.velocity += bounceDirection * bounceForce; // Apply force along slope
+                    Vector3 bounceDirection = Vector3.Project(hit.normal, Vector3.up).normalized; 
+                    rb.velocity += bounceDirection * bounceForce;
                 }
                 else
                 {
-                    // Default to world up if no ground detected
                     rb.velocity += Vector3.up * bounceForce;
                 }
 
-                lastDirectionChangeTime = Time.time; // Reset cooldown
+                lastDirectionChangeTime = Time.time;
             }
         }
     }
 
-    // Check if the kart lands on the ground
-    void OnCollisionEnter(Collision collision)
+    void ApplyExtraGravity()
     {
-        if (collision.gameObject.CompareTag("Ground"))
+        if (!isGrounded)
         {
-            isGrounded = true;
+            airTime += Time.fixedDeltaTime;
+
+            if (airTime >= 2f)
+            {
+                Debug.Log("HEAVIER!!!");
+                downwardForce += downwardForceIncreaseRate * Time.fixedDeltaTime;
+                downwardForce = Mathf.Min(downwardForce, maxDownwardForce);
+                rb.AddForce(Vector3.down * downwardForce, ForceMode.Acceleration);
+            }
         }
     }
 
-    // Check if the kart leaves the ground
-    void OnCollisionExit(Collision collision)
-    {
-        if (collision.gameObject.CompareTag("Ground"))
-        {
-            isGrounded = false;
-        }
-    }
-
-    // Helper function to check if the kart is on the ground
-    bool IsGrounded()
-    {
-        return Physics.Raycast(transform.position, -Vector3.up, 1.5f);
-    }
-
-    
     void Move()
     {
         RaycastHit hit;
@@ -107,16 +115,12 @@ public abstract class AbstractKart : MonoBehaviour
 
         if (Physics.Raycast(transform.position, -Vector3.up, out hit, 1.5f))
         {
-            // Align forward movement to slope
             moveDirection = Vector3.ProjectOnPlane(transform.forward, hit.normal).normalized;
-
-            // Force rotation to match ground when landing
             Quaternion targetRotation = Quaternion.LookRotation(moveDirection, hit.normal);
             transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, Time.fixedDeltaTime * 10f);
         }
         else
         {
-            // Optional: Reset rotation gradually in air
             transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.Euler(0, transform.eulerAngles.y, 0), Time.fixedDeltaTime * 2f);
         }
 
@@ -132,16 +136,15 @@ public abstract class AbstractKart : MonoBehaviour
         rb.velocity = Vector3.ClampMagnitude(rb.velocity, maxSpeed);
     }
 
-    
     void Turn()
     {
-        if (rb.velocity.magnitude > 1f) // Turning is always allowed
+        if (rb.velocity.magnitude > 1f)
         {
             float turn = turnInput * turnSpeed * Time.fixedDeltaTime;
             transform.Rotate(Vector3.up * turn);
         }
     }
-    
+
     void ApplyDrift()
     {
         if (isDrifting)
@@ -149,9 +152,176 @@ public abstract class AbstractKart : MonoBehaviour
             rb.velocity = Vector3.Lerp(rb.velocity, transform.forward * rb.velocity.magnitude, driftFactor * Time.fixedDeltaTime);
         }
     }
-    
+
     public void Boost()
     {
+        if (!isBoosting)
+        {
+            StartCoroutine(BoostForSeconds(boostDuration));
+        }
+    }
+
+    private IEnumerator BoostForSeconds(float duration)
+    {
+        Debug.Log("Boosting!");
+        isBoosting = true;
+        boostActive = true;
+
+        float boostedSpeed = originalMaxSpeed * boostMultiplier;
+        maxSpeed = boostedSpeed;
         rb.velocity *= boostMultiplier;
+
+        yield return new WaitForSeconds(duration);
+
+        isBoosting = false;
+        boostActive = false;
+
+        // Only reset maxSpeed if a slowdown isn't currently active
+        if (!slowdownActive)
+        {
+            maxSpeed = originalMaxSpeed;
+        }
+    }
+
+    public void Slowdown()
+    {
+        if (!isSlowed)
+        {
+            StartCoroutine(SlowdownForSeconds(slowDuration));
+        }
+    }
+
+    private IEnumerator SlowdownForSeconds(float duration)
+    {
+        Debug.Log("Slowing down!");
+        isSlowed = true;
+        slowdownActive = true;
+
+        float slowedSpeed = originalMaxSpeed * slowMultiplier;
+        maxSpeed = slowedSpeed;
+        rb.velocity *= slowMultiplier;
+
+        yield return new WaitForSeconds(duration);
+
+        isSlowed = false;
+        slowdownActive = false;
+
+        // Only reset maxSpeed if a boost isn't currently active
+        if (!boostActive)
+        {
+            maxSpeed = originalMaxSpeed;
+        }
+    }
+
+    void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("Boost"))
+        {
+            Boost();
+        }
+        else if (other.CompareTag("Slowdown")) // If hitting a slowdown object
+        {
+            Slowdown();
+        }
+    }
+    void OnTriggerStay(Collider other)
+    {
+        if(other.CompareTag("Boost")){
+            if(!isBoosting){
+                Boost();
+            }
+        }
+        else if (other.CompareTag("Slowdown"))
+        {
+            if (!isSlowed)
+            {
+                Slowdown();
+            }
+        }
+    }
+
+    void OnTriggerExit(Collider other)
+    {
+        if (other.CompareTag("Boost"))
+        {
+            StartCoroutine(ResetSpeedAfterDelay(boostDuration));
+        }
+        else if (other.CompareTag("Slowdown"))
+        {
+            maxSpeed = originalMaxSpeed; // Immediately restore original speed
+        }
+    }
+
+    void OnCollisionEnter(Collision collision)
+    {
+        if (collision.gameObject.CompareTag("Ground") || collision.gameObject.CompareTag("MovingGround"))
+        {
+            isGrounded = true;
+            airTime = 0f;
+            downwardForce = 0f; // Reset force
+        }
+
+        if (collision.gameObject.CompareTag("Danger"))
+        {
+            Knockback(collision);
+        }
+    }
+
+    void OnCollisionExit(Collision collision)
+    {
+        if (collision.gameObject.CompareTag("Ground") || collision.gameObject.CompareTag("MovingGround") || collision.gameObject.CompareTag("Danger"))
+        {
+            isGrounded = false;
+            StartCoroutine(ResetGroundedStatusAfterDelay(3.5f));
+        }
+    }
+
+    void OnCollisionStay(Collision collision)
+    {
+        if (collision.gameObject.CompareTag("MovingGround"))
+        {
+            Rigidbody platformRb = collision.rigidbody;
+            if (platformRb != null)
+            {
+                platformVelocity = platformRb.velocity;
+            }
+        }
+    }
+
+    void Knockback(Collision collision)
+    {
+        speedInput = 0;
+        turnInput = 0;
+
+        rb.velocity = Vector3.zero;
+        rb.angularVelocity = Vector3.zero;
+
+        Vector3 knockbackDirection = (transform.position - collision.contacts[0].point).normalized;
+        knockbackDirection.y = Mathf.Abs(knockbackDirection.y) + 0.5f; 
+
+        float knockbackForce = 30000f;
+        rb.AddForce(knockbackDirection * knockbackForce, ForceMode.Impulse);
+
+        StartCoroutine(DisableControlsForSeconds(controlsDisableTime));
+    }
+
+    private IEnumerator DisableControlsForSeconds(float duration)
+    {
+        controlsDisabled = true;
+        yield return new WaitForSeconds(duration);
+        controlsDisabled = false;
+    }
+    
+    private IEnumerator ResetSpeedAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        maxSpeed = originalMaxSpeed;
+    }
+
+    private IEnumerator ResetGroundedStatusAfterDelay(float delay)
+    {
+        Debug.Log("Ground Reset.");
+        yield return new WaitForSeconds(delay);
+        isGrounded = true;
     }
 }
