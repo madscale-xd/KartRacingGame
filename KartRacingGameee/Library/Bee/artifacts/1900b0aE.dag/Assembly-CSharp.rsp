@@ -360,6 +360,8 @@
 "Assets/Scripts/FloatingMovementY.cs"
 "Assets/Scripts/Kart1.cs"
 "Assets/Scripts/PrefabSpawner.cs"
+"Assets/Scripts/SceneButtonManager.cs"
+"Assets/Scripts/TimerUI.cs"
 "Assets/Scripts/YRotation.cs"
 -langversion:9.0
 /deterministic

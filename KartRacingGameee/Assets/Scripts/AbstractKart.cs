@@ -36,11 +36,21 @@ public abstract class AbstractKart : MonoBehaviour
     private bool boostActive = false;
     private bool slowdownActive = false;
 
+    private bool LapActive = false;
+
+    public int LapCount = 0;
+
+    private TimerUI timer;
+
+    private SceneButtonManager scene;
+
     void Start()
     {
         rb = GetComponent<Rigidbody>();
         rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
         originalMaxSpeed = maxSpeed;
+        timer = GameObject.Find("KartUI").GetComponent<TimerUI>();
+        scene = GameObject.Find("LapStarter").GetComponent<SceneButtonManager>();
     }
 
     void Update()
@@ -219,7 +229,12 @@ public abstract class AbstractKart : MonoBehaviour
         {
             Slowdown();
         }
+        else if (other.CompareTag("LapCounter")){
+            Debug.Log("Eligible for a lap!");
+            LapActive = true;
+        }
     }
+
     void OnTriggerStay(Collider other)
     {
         if(other.CompareTag("Boost")){
@@ -261,6 +276,18 @@ public abstract class AbstractKart : MonoBehaviour
         {
             Knockback(collision);
         }
+
+        if (collision.gameObject.name == "LapStarter" && LapActive == true)
+        {
+            Debug.Log("Lap++");
+            LapCount++;
+            LapActive = false;
+            timer.UpdateLapText(LapCount);
+            if(LapCount == 3){
+                timer.ExportTime();
+                scene.LoadEnd();
+            }
+        }
     }
 
     void OnCollisionExit(Collision collision)
@@ -274,7 +301,7 @@ public abstract class AbstractKart : MonoBehaviour
 
     void OnCollisionStay(Collision collision)
     {
-        if (collision.gameObject.CompareTag("Ground"))
+        if (collision.gameObject.CompareTag("Ground") || collision.gameObject.CompareTag("MovingGround"))
         {
             isGrounded = true;
             airTime = 0f;
