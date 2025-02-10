@@ -94,18 +94,14 @@ public abstract class AbstractKart : MonoBehaviour
 
     void ApplyExtraGravity()
     {
-        if (!isGrounded)
-        {
-            airTime += Time.fixedDeltaTime;
-
-            if (airTime >= 2f)
+        airTime += Time.fixedDeltaTime;
+            if (airTime >= 1.8f)
             {
                 Debug.Log("HEAVIER!!!");
                 downwardForce += downwardForceIncreaseRate * Time.fixedDeltaTime;
                 downwardForce = Mathf.Min(downwardForce, maxDownwardForce);
                 rb.AddForce(Vector3.down * downwardForce, ForceMode.Acceleration);
             }
-        }
     }
 
     void Move()
@@ -278,6 +274,12 @@ public abstract class AbstractKart : MonoBehaviour
 
     void OnCollisionStay(Collision collision)
     {
+        if (collision.gameObject.CompareTag("Ground"))
+        {
+            isGrounded = true;
+            airTime = 0f;
+            downwardForce = 0f; // Reset force
+        }
         if (collision.gameObject.CompareTag("MovingGround"))
         {
             Rigidbody platformRb = collision.rigidbody;
