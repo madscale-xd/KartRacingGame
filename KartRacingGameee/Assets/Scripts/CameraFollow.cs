@@ -2,23 +2,26 @@ using UnityEngine;
 
 public class CameraFollow : MonoBehaviour
 {
-    public Transform target; // Reference to the kart
+    private Transform target; // Player's transform
     public Vector3 offset = new Vector3(0, 3, -6); // Default camera position
     public float followSpeed = 10f; // Smooth follow speed
     public float rotationSpeed = 5f; // Smooth rotation speed
 
     private Rigidbody targetRb;
 
-    void Start()
-    {
-        if (target != null)
-        {
-            targetRb = target.GetComponent<Rigidbody>();
-        }
-    }
-
     void FixedUpdate()
     {
+        // Find the player if it's missing
+        if (target == null)
+        {
+            GameObject player = GameObject.Find("Player");
+            if (player != null)
+            {
+                target = player.transform;
+                targetRb = player.GetComponent<Rigidbody>();
+            }
+        }
+
         if (target == null) return;
 
         // Smoothly interpolate camera position

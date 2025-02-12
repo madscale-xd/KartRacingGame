@@ -122,15 +122,24 @@ public abstract class AbstractKart : MonoBehaviour
 
         if (Physics.Raycast(transform.position, -Vector3.up, out hit, 1.5f))
         {
-            moveDirection = Vector3.ProjectOnPlane(transform.forward, hit.normal).normalized;
-            Quaternion targetRotation = Quaternion.LookRotation(moveDirection, hit.normal);
-            transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, Time.fixedDeltaTime * 10f);
+            // Check if the object hit is tagged as "Ground" or "MovingGround"
+            if (hit.collider.CompareTag("Ground") || hit.collider.CompareTag("MovingGround"))
+            {
+                // Adjust movement direction based on valid ground normal
+                moveDirection = Vector3.ProjectOnPlane(transform.forward, hit.normal).normalized;
+
+                // Rotate the player to align with the valid ground
+                Quaternion targetRotation = Quaternion.LookRotation(moveDirection, hit.normal);
+                transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, Time.fixedDeltaTime * 10f);
+            }
         }
         else
         {
+            // If airborne, prevent extreme tilting
             transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.Euler(0, transform.eulerAngles.y, 0), Time.fixedDeltaTime * 2f);
         }
 
+        // Movement logic
         if (speedInput > 0)
         {
             rb.AddForce(moveDirection * speedInput, ForceMode.Acceleration);
@@ -142,6 +151,7 @@ public abstract class AbstractKart : MonoBehaviour
 
         rb.velocity = Vector3.ClampMagnitude(rb.velocity, maxSpeed);
     }
+
 
     void Turn()
     {
