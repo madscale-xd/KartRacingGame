@@ -10,10 +10,10 @@ public abstract class AbstractKart : MonoBehaviour
     [SerializeField] protected float deceleration = 5f;
     [SerializeField] protected float driftFactor = 0.95f;
     [SerializeField] protected float boostMultiplier = 1.5f;
-    [SerializeField] protected float boostDuration = 2f; 
+    [SerializeField] protected float boostDuration = 2f;
     [SerializeField] protected float slowMultiplier = 0.5f; // Slowdown multiplier
     [SerializeField] protected float slowDuration = 2f;    // Duration of slowdown effect
-    [SerializeField] protected float bounceForce = 2f; 
+    [SerializeField] protected float bounceForce = 2f;
     [SerializeField] protected float controlsDisableTime = 1.5f;
     private float airTime = 0f;
     private float downwardForce = 0f;
@@ -24,11 +24,11 @@ public abstract class AbstractKart : MonoBehaviour
     private float speedInput;
     private float turnInput;
     private bool isDrifting;
-    private bool isBoosting = false; 
+    private bool isBoosting = false;
     private bool isSlowed = false; // Track slowdown status
     private float directionChangeCooldown = 0.25f;
     private float lastDirectionChangeTime = 0f;
-    private bool isGrounded = false; 
+    private bool isGrounded = false;
 
     private Vector3 platformVelocity = Vector3.zero;
     private bool controlsDisabled = false;
@@ -68,28 +68,28 @@ public abstract class AbstractKart : MonoBehaviour
 
     void HandleInput()
     {
-        if (controlsDisabled) return; 
+        if (controlsDisabled) return;
 
         float previousTurnInput = turnInput;
 
+        // Acceleration Input
         speedInput = (Input.GetKey(KeyCode.W) ? 1 : 0) - (Input.GetKey(KeyCode.S) ? 1 : 0);
         speedInput *= acceleration;
 
-        if (Time.time - lastDirectionChangeTime >= directionChangeCooldown)
-        {
-            turnInput = (Input.GetKey(KeyCode.D) ? 1 : 0) - (Input.GetKey(KeyCode.A) ? 1 : 0);
-        }
+        // Turn Input (instant response)
+        turnInput = (Input.GetKey(KeyCode.D) ? 1 : 0) - (Input.GetKey(KeyCode.A) ? 1 : 0);
 
         isDrifting = Input.GetKey(KeyCode.LeftControl);
 
-        if (turnInput != 0 && turnInput != previousTurnInput && Time.time - lastDirectionChangeTime >= directionChangeCooldown)
+        // Bounce effect is limited by directionChangeCooldown
+        if (isGrounded && turnInput != 0 && turnInput != previousTurnInput)
         {
-            if (isGrounded) 
+            if (Time.time - lastDirectionChangeTime >= directionChangeCooldown)
             {
                 RaycastHit hit;
                 if (Physics.Raycast(transform.position, -Vector3.up, out hit, 1.5f))
                 {
-                    Vector3 bounceDirection = Vector3.Project(hit.normal, Vector3.up).normalized; 
+                    Vector3 bounceDirection = Vector3.Project(hit.normal, Vector3.up).normalized;
                     rb.velocity += bounceDirection * bounceForce;
                 }
                 else
@@ -97,21 +97,22 @@ public abstract class AbstractKart : MonoBehaviour
                     rb.velocity += Vector3.up * bounceForce;
                 }
 
-                lastDirectionChangeTime = Time.time;
+                lastDirectionChangeTime = Time.time; // Apply cooldown only for bounce
             }
         }
     }
 
+
     void ApplyExtraGravity()
     {
         airTime += Time.fixedDeltaTime;
-            if (airTime >= 1.8f)
-            {
-                Debug.Log("HEAVIER!!!");
-                downwardForce += downwardForceIncreaseRate * Time.fixedDeltaTime;
-                downwardForce = Mathf.Min(downwardForce, maxDownwardForce);
-                rb.AddForce(Vector3.down * downwardForce, ForceMode.Acceleration);
-            }
+        if (airTime >= 1.8f)
+        {
+            Debug.Log("HEAVIER!!!");
+            downwardForce += downwardForceIncreaseRate * Time.fixedDeltaTime;
+            downwardForce = Mathf.Min(downwardForce, maxDownwardForce);
+            rb.AddForce(Vector3.down * downwardForce, ForceMode.Acceleration);
+        }
     }
 
     void Move()
@@ -229,7 +230,8 @@ public abstract class AbstractKart : MonoBehaviour
         {
             Slowdown();
         }
-        else if (other.CompareTag("LapCounter")){
+        else if (other.CompareTag("LapCounter"))
+        {
             Debug.Log("Eligible for a lap!");
             LapActive = true;
         }
@@ -237,8 +239,10 @@ public abstract class AbstractKart : MonoBehaviour
 
     void OnTriggerStay(Collider other)
     {
-        if(other.CompareTag("Boost")){
-            if(!isBoosting){
+        if (other.CompareTag("Boost"))
+        {
+            if (!isBoosting)
+            {
                 Boost();
             }
         }
@@ -283,7 +287,8 @@ public abstract class AbstractKart : MonoBehaviour
             LapCount++;
             LapActive = false;
             timer.UpdateLapText(LapCount);
-            if(LapCount == 3){
+            if (LapCount == 3)
+            {
                 timer.ExportTime();
                 scene.LoadEnd();
             }
@@ -326,7 +331,7 @@ public abstract class AbstractKart : MonoBehaviour
         rb.angularVelocity = Vector3.zero;
 
         Vector3 knockbackDirection = (transform.position - collision.contacts[0].point).normalized;
-        knockbackDirection.y = Mathf.Abs(knockbackDirection.y) + 0.5f; 
+        knockbackDirection.y = Mathf.Abs(knockbackDirection.y) + 0.5f;
 
         float knockbackForce = 30000f;
         rb.AddForce(knockbackDirection * knockbackForce, ForceMode.Impulse);
@@ -340,7 +345,7 @@ public abstract class AbstractKart : MonoBehaviour
         yield return new WaitForSeconds(duration);
         controlsDisabled = false;
     }
-    
+
     private IEnumerator ResetSpeedAfterDelay(float delay)
     {
         yield return new WaitForSeconds(delay);
