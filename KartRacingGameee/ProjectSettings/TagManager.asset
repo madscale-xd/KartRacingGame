@@ -13,6 +13,7 @@ TagManager:
   - LapCounter
   - Checkpoint
   - KillZone
+  - Powerup
   layers:
   - Default
   - TransparentFX

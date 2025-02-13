@@ -12,7 +12,6 @@ public class SFXManager : MonoBehaviour
         public AudioClip clip;
     }
 
-    [SerializeField] private AudioSource sfxSource;      // For one-shot sounds
     [SerializeField] private AudioSource loopSourceSlow; // For slow looping sounds
     [SerializeField] private AudioSource loopSourceHum;  // For hum sound loop
     [SerializeField] private SoundEffect[] soundEffects; // Array of sound effects
@@ -20,7 +19,9 @@ public class SFXManager : MonoBehaviour
     private string currentlyLoopingSlow = null;
     private string currentlyLoopingHum = null;
 
-    private HashSet<string> activeOneShots = new HashSet<string>(); // Tracks active one-shot sounds
+    private Dictionary<string, AudioSource> oneShotSources = new Dictionary<string, AudioSource>(); // Tracks active one-shot sounds
+
+    [Range(0f, 1f)] public float oneShotVolume = 1.0f; // Volume control for one-shot sounds
 
     private void Awake()
     {
@@ -35,29 +36,48 @@ public class SFXManager : MonoBehaviour
         }
     }
 
-    // Play a sound once, ensuring no duplicate play
+    // Play a sound once, ensuring the latest sound overrides the previous one
     public void PlaySound(string soundName)
     {
-        if (activeOneShots.Contains(soundName)) return; // Prevent duplicate play
-
         foreach (SoundEffect sound in soundEffects)
         {
             if (sound.name == soundName)
             {
-                sfxSource.PlayOneShot(sound.clip);
-                activeOneShots.Add(soundName);
-                StartCoroutine(RemoveFromActiveOneShots(sound.clip.length, soundName)); // Remove after duration
+                // If sound is already playing, stop it before playing the new one
+                if (oneShotSources.ContainsKey(soundName))
+                {
+                    oneShotSources[soundName].Stop();
+                }
+                else
+                {
+                    // Create a new AudioSource for this sound if it doesn't exist
+                    AudioSource newSource = gameObject.AddComponent<AudioSource>();
+                    newSource.playOnAwake = false;
+                    newSource.spatialBlend = 0f; // Non-3D sound by default
+                    oneShotSources[soundName] = newSource;
+                }
+
+                // Assign the new clip and play it
+                oneShotSources[soundName].clip = sound.clip;
+                oneShotSources[soundName].volume = oneShotVolume; // Apply volume
+                oneShotSources[soundName].Play();
+
                 return;
             }
         }
         Debug.LogWarning("Sound not found: " + soundName);
     }
 
-    // Coroutine to remove the sound from active list after it finishes playing
-    private System.Collections.IEnumerator RemoveFromActiveOneShots(float duration, string soundName)
+    // Adjust volume for one-shot sounds
+    public void SetOneShotVolume(float value)
     {
-        yield return new WaitForSeconds(duration);
-        activeOneShots.Remove(soundName);
+        oneShotVolume = Mathf.Clamp(value, 0f, 1f); // Clamp volume between 0 and 1
+
+        // Update volume for all existing one-shot AudioSources
+        foreach (var source in oneShotSources.Values)
+        {
+            source.volume = oneShotVolume;
+        }
     }
 
     // Start looping a sound on the slow loop source

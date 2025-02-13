@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 731836145141228258}
   - component: {fileID: 341178315623995725}
   - component: {fileID: 2718854579848020862}
+  - component: {fileID: -6944318040573718362}
   m_Layer: 0
   m_Name: Player2
   m_TagString: Player
@@ -148,6 +149,24 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   LapCount: 0
+--- !u!114 &-6944318040573718362
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2818063601887720776}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7bfcb91efbfaf7b43807f5f3359a7d71, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  slowZonePrefab: {fileID: 7923001696639358582, guid: 31ff6101737ebca408aa332e26543b20, type: 3}
+  barrelPrefab: {fileID: 4129416399366565321, guid: ae15bbb18491ee8419d93efb79052b6f, type: 3}
+  flashPrefab: {fileID: 347950288869850276, guid: d333998e2131ff54ab35c60a84cd20ce, type: 3}
+  player: {fileID: 6833175359355166467}
+  playerRb: {fileID: 341178315623995725}
+  squidBoostForce: 450
 --- !u!1001 &6566868624676473284
 PrefabInstance:
   m_ObjectHideFlags: 0

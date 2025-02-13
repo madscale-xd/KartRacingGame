@@ -12,7 +12,6 @@ public class FloatingMovementY : MonoBehaviour
     void Start()
     {
         rb = GetComponent<Rigidbody>();
-        rb.isKinematic = true; // Prevents gravity from affecting it
         startPos = transform.position;
     }
 

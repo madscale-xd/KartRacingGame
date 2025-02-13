@@ -366,6 +366,7 @@
 "Assets/Scripts/Kart3.cs"
 "Assets/Scripts/KillZone.cs"
 "Assets/Scripts/PauseMenu.cs"
+"Assets/Scripts/PowerUp.cs"
 "Assets/Scripts/PrefabSpawner.cs"
 "Assets/Scripts/SceneButtonManager.cs"
 "Assets/Scripts/SFXManager.cs"

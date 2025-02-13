@@ -353,6 +353,10 @@ public abstract class AbstractKart : MonoBehaviour
             LapCount++;
             LapActive = false;
             timer.UpdateLapText(LapCount);
+            
+            // Reactivate all deactivated power-ups
+            FindObjectOfType<PowerUp>().ReactivatePowerUps();
+            
             if (LapCount == 3)
             {
                 timer.ExportTime();
