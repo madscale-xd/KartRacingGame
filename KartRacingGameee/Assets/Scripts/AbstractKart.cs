@@ -3,22 +3,25 @@ using System.Collections;
 
 public abstract class AbstractKart : MonoBehaviour
 {
-    [Header("Speed Settings")]
-    [SerializeField] protected float acceleration = 10f;
-    [SerializeField] protected float maxSpeed = 20f;
-    [SerializeField] protected float turnSpeed = 100f;
-    [SerializeField] protected float deceleration = 5f;
-    [SerializeField] protected float driftFactor = 0.95f;
-    [SerializeField] protected float boostMultiplier = 1.5f;
-    [SerializeField] protected float boostDuration = 2f;
-    [SerializeField] protected float slowMultiplier = 0.5f; // Slowdown multiplier
-    [SerializeField] protected float slowDuration = 2f;    // Duration of slowdown effect
-    [SerializeField] protected float bounceForce = 2f;
-    [SerializeField] protected float controlsDisableTime = 1.5f;
+    protected float acceleration = 10f;
+    protected float maxSpeed = 20f;
+    protected float turnSpeed = 100f;
+    protected float deceleration = 5f;
+    protected float driftFactor = 0.95f;
+    protected float boostMultiplier = 1.5f;
+    protected float boostDuration = 2f;
+    protected float slowMultiplier = 0.5f; // Slowdown multiplier
+    protected float slowDuration = 2f;    // Duration of slowdown effect
+    protected float bounceForce = 2f;
+    protected float controlsDisableTime = 1.5f;
+
+    protected float maxAirTime = 1.8f;
+
+    protected float knockbackForce = 30000f;
     private float airTime = 0f;
     private float downwardForce = 0f;
-    [SerializeField] private float maxDownwardForce = 50f; // Cap for downward force
-    [SerializeField] private float downwardForceIncreaseRate = 10f; // How fast force increases
+    private float maxDownwardForce = 300f; // Cap for downward force
+    private float downwardForceIncreaseRate = 60f; // How fast force increases
 
     private Rigidbody rb;
     private float speedInput;
@@ -35,14 +38,17 @@ public abstract class AbstractKart : MonoBehaviour
     private float originalMaxSpeed;
     private bool boostActive = false;
     private bool slowdownActive = false;
-
     private bool LapActive = false;
+    private bool isHumPlaying = false;
+    private Coroutine stopHumCoroutine = null; // Reference to the stop coroutine
 
     public int LapCount = 0;
 
     private TimerUI timer;
 
     private SceneButtonManager scene;
+
+    private SFXManager sfxman;
 
     void Start()
     {
@@ -51,6 +57,7 @@ public abstract class AbstractKart : MonoBehaviour
         originalMaxSpeed = maxSpeed;
         timer = GameObject.Find("KartUI").GetComponent<TimerUI>();
         scene = GameObject.Find("LapStarter").GetComponent<SceneButtonManager>();
+        sfxman = GameObject.Find("EventSystem").GetComponent<SFXManager>();
     }
 
     void Update()
@@ -68,7 +75,42 @@ public abstract class AbstractKart : MonoBehaviour
 
     void HandleInput()
     {
-        if (controlsDisabled) return;
+        if (controlsDisabled)
+        {
+            if (isHumPlaying)
+            {
+                if (stopHumCoroutine != null)
+                {
+                    StopCoroutine(stopHumCoroutine); // Cancel the delay if already scheduled
+                }
+                stopHumCoroutine = StartCoroutine(DelayedStopHum(0.5f)); // Stop with delay
+            }
+            return;
+        }
+
+        bool hasInput = Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.D);
+
+        // Start or stop looping sound based on input
+        if (hasInput)
+        {
+            if (!isHumPlaying)
+            {
+                if (stopHumCoroutine != null)
+                {
+                    StopCoroutine(stopHumCoroutine); // Cancel the scheduled stop if input resumes
+                    stopHumCoroutine = null;
+                }
+                sfxman.StartLoopingHum("Hum");
+                isHumPlaying = true;
+            }
+        }
+        else
+        {
+            if (isHumPlaying && stopHumCoroutine == null)
+            {
+                stopHumCoroutine = StartCoroutine(DelayedStopHum(0.5f)); // Stop with delay
+            }
+        }
 
         float previousTurnInput = turnInput;
 
@@ -76,13 +118,13 @@ public abstract class AbstractKart : MonoBehaviour
         speedInput = (Input.GetKey(KeyCode.W) ? 1 : 0) - (Input.GetKey(KeyCode.S) ? 1 : 0);
         speedInput *= acceleration;
 
-        // Turn Input (instant response)
+        // Turn Input
         turnInput = (Input.GetKey(KeyCode.D) ? 1 : 0) - (Input.GetKey(KeyCode.A) ? 1 : 0);
 
         isDrifting = Input.GetKey(KeyCode.LeftControl);
 
-        // Bounce effect is limited by directionChangeCooldown
-        if (isGrounded && turnInput != 0 && turnInput != previousTurnInput)
+        // Bounce only if drifting and turning
+        if (isGrounded && isDrifting && turnInput != 0 && turnInput != previousTurnInput)
         {
             if (Time.time - lastDirectionChangeTime >= directionChangeCooldown)
             {
@@ -102,13 +144,22 @@ public abstract class AbstractKart : MonoBehaviour
         }
     }
 
+    // Coroutine to delay stopping the hum sound
+    private IEnumerator DelayedStopHum(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+
+        sfxman.StopLoopingHum("Hum");
+        isHumPlaying = false;
+        stopHumCoroutine = null;
+    }
 
     void ApplyExtraGravity()
     {
         airTime += Time.fixedDeltaTime;
-        if (airTime >= 1.8f)
+        if (airTime >= maxAirTime)
         {
-            Debug.Log("HEAVIER!!!");
+            //Debug.Log("HEAVIER!!!");
             downwardForce += downwardForceIncreaseRate * Time.fixedDeltaTime;
             downwardForce = Mathf.Min(downwardForce, maxDownwardForce);
             rb.AddForce(Vector3.down * downwardForce, ForceMode.Acceleration);
@@ -234,10 +285,12 @@ public abstract class AbstractKart : MonoBehaviour
     {
         if (other.CompareTag("Boost"))
         {
+            sfxman.PlaySound("Speed");
             Boost();
         }
         else if (other.CompareTag("Slowdown")) // If hitting a slowdown object
         {
+            sfxman.PlaySound("SlowEnter");
             Slowdown();
         }
         else if (other.CompareTag("LapCounter"))
@@ -258,6 +311,7 @@ public abstract class AbstractKart : MonoBehaviour
         }
         else if (other.CompareTag("Slowdown"))
         {
+            sfxman.StartLoopingSlow("SlowStay");
             if (!isSlowed)
             {
                 Slowdown();
@@ -273,6 +327,7 @@ public abstract class AbstractKart : MonoBehaviour
         }
         else if (other.CompareTag("Slowdown"))
         {
+            sfxman.StopLoopingSlow("SlowStay");
             maxSpeed = originalMaxSpeed; // Immediately restore original speed
         }
     }
@@ -288,6 +343,7 @@ public abstract class AbstractKart : MonoBehaviour
 
         if (collision.gameObject.CompareTag("Danger"))
         {
+            sfxman.PlaySound("Crash");
             Knockback(collision);
         }
 

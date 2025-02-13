@@ -4,8 +4,8 @@ public class CameraFollow : MonoBehaviour
 {
     private Transform target; // Player's transform
     public Vector3 offset = new Vector3(0, 3, -6); // Default camera position
-    public float followSpeed = 10f; // Smooth follow speed
-    public float rotationSpeed = 5f; // Smooth rotation speed
+    public float followSpeed = 20f; // Smooth follow speed
+    public float rotationSpeed = 25f; // Smooth rotation speed
 
     private Rigidbody targetRb;
 

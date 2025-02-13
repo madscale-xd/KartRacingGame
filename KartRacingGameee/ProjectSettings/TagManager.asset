@@ -11,6 +11,8 @@ TagManager:
   - BarrelDestroyer
   - Slowdown
   - LapCounter
+  - Checkpoint
+  - KillZone
   layers:
   - Default
   - TransparentFX
