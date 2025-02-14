@@ -8,39 +8,59 @@ public class CarSelectionView : View
     [SerializeField] private Button _settingsButton;
     [SerializeField] private Button _creditsButton;
 
-    [SerializeField] private InstantiatePlayer ins;
+    [SerializeField] private GameObject rollyModel;
+    [SerializeField] private GameObject fleetModel;
+    [SerializeField] private GameObject stewieModel;
+    [SerializeField] private GameObject selectionBG1;
+    [SerializeField] private GameObject selectionBG2;
 
+    [SerializeField] private InstantiatePlayer ins;
 
     public override void Initialize()
     {
 
     }
 
-        void Start()
+    void Start()
     {
 
     }
 
-        void Update()
+    void Update()
     {
 
     }
 
-    public void SpawnRolly(){
+    public void SpawnRolly()
+    {
         ins.SpawnPlayer(0, "Player");
         ViewManager.Show<UIView>();
         Time.timeScale = 1f;
+        HideModels();
     }
 
-    public void SpawnFleet(){
+    public void SpawnFleet()
+    {
         ins.SpawnPlayer(1, "Player");
-         ViewManager.Show<UIView>();
-         Time.timeScale = 1f;
+        ViewManager.Show<UIView>();
+        Time.timeScale = 1f;
+        HideModels();
     }
 
-    public void SpawnStewie(){
+    public void SpawnStewie()
+    {
         ins.SpawnPlayer(2, "Player");
-         ViewManager.Show<UIView>();
-         Time.timeScale = 1f;
+        ViewManager.Show<UIView>();
+        Time.timeScale = 1f;
+        HideModels();
+    }
+
+    private void HideModels()
+    {
+        rollyModel.SetActive(false);
+        fleetModel.SetActive(false);
+        stewieModel.SetActive(false);
+        selectionBG1.SetActive(false);
+        selectionBG2.SetActive(false);
     }
 }

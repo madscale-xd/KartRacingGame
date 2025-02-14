@@ -4,7 +4,7 @@ public class Kart1 : AbstractKart
 {
     void Awake()
     { //Circle
-        acceleration = 15f;
+        acceleration = 16.5f;
         maxSpeed = 8.5f;
         turnSpeed = 65f;
         deceleration = 0.0005f;

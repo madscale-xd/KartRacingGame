@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
-using System.Collections; 
+using System.Collections;
+using TMPro;
 
 public class PowerUp : MonoBehaviour
 {
@@ -15,6 +16,22 @@ public class PowerUp : MonoBehaviour
     [SerializeField] private Transform player; // Reference to the player's transform
     [SerializeField] private Rigidbody playerRb; // Reference to the player's Rigidbody
     [SerializeField] private float squidBoostForce = 15f; // How much force to apply
+    private TextMeshProUGUI powerUpText;
+
+    private void Start()
+    {
+        // Find the UI Text by name in the scene
+        powerUpText = GameObject.Find("PowerUpText")?.GetComponent<TextMeshProUGUI>();
+
+        if (powerUpText != null)
+        {
+            powerUpText.text = ""; // Clear text on start
+        }
+        else
+        {
+            Debug.LogWarning("PowerUpText UI not found in the scene!");
+        }
+    }
 
     private void OnTriggerEnter(Collider other)
     {
@@ -25,6 +42,8 @@ public class PowerUp : MonoBehaviour
 
             other.gameObject.SetActive(false);
             deactivatedPowerUps.Add(other.gameObject);
+
+            DisplayPowerUpText(currentPowerUp);
         }
     }
 
@@ -66,6 +85,36 @@ public class PowerUp : MonoBehaviour
                 break;
         }
     }
+
+    private void DisplayPowerUpText(int powerUp)
+    {
+        if (powerUpText != null)
+        {
+            switch (powerUp)
+            {
+                case 1: powerUpText.text = "Power-up: Squid Boost! - Oil behind you!"; break;
+                case 2: powerUpText.text = "Power-up: Gigant Mode! - You're bigger, sturdier!"; break;
+                case 3: powerUpText.text = "Power-up: Barrel Roll! - Barrel behind you!"; break;
+                case 4: powerUpText.text = "Power-up: Minimize! - You're smaller, hard to hit!"; break;
+                case 5: powerUpText.text = "Power-up: Flashbang - Vision behind is obscured!"; break;
+                default: powerUpText.text = ""; break;
+            }
+
+            // Start a coroutine to hide the text after 5 seconds
+            StartCoroutine(HidePowerUpTextAfterDelay(5f));
+
+        }
+    }
+
+    private IEnumerator HidePowerUpTextAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        if (powerUpText != null)
+        {
+            powerUpText.text = "";
+        }
+    }
+
 
     private void ApplySquidEffect()
     {

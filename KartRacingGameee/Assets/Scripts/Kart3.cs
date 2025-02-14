@@ -4,7 +4,7 @@ public class Kart3 : AbstractKart
 {
     void Awake()
     { //Square (Bulky guy)
-        acceleration = 14.4f;
+        acceleration = 14.5f;
         maxSpeed = 8.2f;
         turnSpeed = 55f;
         deceleration = 0.0015f;
@@ -13,9 +13,9 @@ public class Kart3 : AbstractKart
         boostDuration = 1.75f;
         slowMultiplier = 0.5f;
         slowDuration = 2f;
-        bounceForce = 1f;
+        bounceForce = 0.3f;
         controlsDisableTime = 1f;
-        knockbackForce = 16000f;
-        maxAirTime = 1.5f;
+        knockbackForce = 0f;
+        maxAirTime = 1f;
     }
 }
