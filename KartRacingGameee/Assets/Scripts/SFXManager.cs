@@ -22,6 +22,7 @@ public class SFXManager : MonoBehaviour
     private Dictionary<string, AudioSource> oneShotSources = new Dictionary<string, AudioSource>(); // Tracks active one-shot sounds
 
     [Range(0f, 1f)] public float oneShotVolume = 1.0f; // Volume control for one-shot sounds
+    private SFXManager sfxman;
 
     private void Awake()
     {

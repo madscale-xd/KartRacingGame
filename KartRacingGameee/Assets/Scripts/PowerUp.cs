@@ -16,10 +16,12 @@ public class PowerUp : MonoBehaviour
     [SerializeField] private Transform player; // Reference to the player's transform
     [SerializeField] private Rigidbody playerRb; // Reference to the player's Rigidbody
     [SerializeField] private float squidBoostForce = 15f; // How much force to apply
+    private SFXManager sfxman;
     private TextMeshProUGUI powerUpText;
 
     private void Start()
     {
+        sfxman = GameObject.Find("EventSystem").GetComponent<SFXManager>();
         // Find the UI Text by name in the scene
         powerUpText = GameObject.Find("PowerUpText")?.GetComponent<TextMeshProUGUI>();
 
@@ -42,6 +44,8 @@ public class PowerUp : MonoBehaviour
 
             other.gameObject.SetActive(false);
             deactivatedPowerUps.Add(other.gameObject);
+
+            sfxman.PlaySound("Powerpickup");
 
             DisplayPowerUpText(currentPowerUp);
         }
@@ -119,7 +123,7 @@ public class PowerUp : MonoBehaviour
     private void ApplySquidEffect()
     {
         Debug.Log("Squid Boost Activated!");
-
+        sfxman.PlaySound("Powerthrow");
         // Apply a forward boost to the player
         Vector3 boostDirection = player.forward * squidBoostForce;
         playerRb.velocity = new Vector3(boostDirection.x, playerRb.velocity.y, boostDirection.z);
@@ -140,13 +144,14 @@ public class PowerUp : MonoBehaviour
         private void ApplyBarrelRoll()
     {
         Debug.Log("Barrel Roll Activated!");
+        sfxman.PlaySound("Powerthrow");
 
         // Apply a forward boost to the player
         Vector3 boostDirection = player.forward * squidBoostForce;
         playerRb.velocity = new Vector3(boostDirection.x, playerRb.velocity.y, boostDirection.z);
 
         // Calculate spawn position behind the player
-        Vector3 spawnPosition = player.position - player.forward * 4f; // Move it back
+        Vector3 spawnPosition = player.position - player.forward * 6f; // Move it back
 
         // Move the player forward a bit after boosting
         player.position += player.forward * 2f; // Adjust this value as needed
@@ -174,6 +179,7 @@ public class PowerUp : MonoBehaviour
     private void ApplyFlashbang()
     {
         Debug.Log("Flashbang Activated!");
+        sfxman.PlaySound("Powerthrow");
 
         // Apply a forward boost to the player
         Vector3 boostDirection = player.forward * squidBoostForce;
@@ -196,6 +202,7 @@ public class PowerUp : MonoBehaviour
     private void ApplyGigant()
     {
         Debug.Log("Gigant Power-up Activated!");
+        sfxman.PlaySound("Powersize");
 
         // Move the player forward
         player.position += player.forward * 5f;
@@ -218,6 +225,7 @@ public class PowerUp : MonoBehaviour
     private void ApplyMinimize()
     {
         Debug.Log("Minimize Power-up Activated!");
+        sfxman.PlaySound("Powersize");
 
         // Move the player forward
         player.position += player.forward * 5f;
@@ -241,10 +249,10 @@ public class PowerUp : MonoBehaviour
     private IEnumerator ResetSizeAfterDelay(Vector3 originalScale, float delay)
     {
         yield return new WaitForSeconds(delay);
-
+        sfxman.PlaySound("Powersizedone");
         // Reset the player's size
         player.localScale = originalScale;
-        Debug.Log("Gigant effect ended. Player size reset.");
+        Debug.Log("Resize effect ended. Player size reset.");
     }
 
     public void ReactivatePowerUps()

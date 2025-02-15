@@ -403,7 +403,6 @@ public abstract class AbstractKart : MonoBehaviour
         Vector3 knockbackDirection = (transform.position - collision.contacts[0].point).normalized;
         knockbackDirection.y = Mathf.Abs(knockbackDirection.y) + 0.5f;
 
-        float knockbackForce = 30000f;
         rb.AddForce(knockbackDirection * knockbackForce, ForceMode.Impulse);
 
         StartCoroutine(DisableControlsForSeconds(controlsDisableTime));

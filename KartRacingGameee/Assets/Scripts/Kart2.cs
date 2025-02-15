@@ -15,7 +15,7 @@ public class Kart2 : AbstractKart
         slowDuration = 1.5f;
         bounceForce = 2f;
         controlsDisableTime = 2.5f;
-        knockbackForce = 35500f;
+        knockbackForce = 40000f;
         maxAirTime = 1.8f;
     }
 }
