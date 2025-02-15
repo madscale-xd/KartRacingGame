@@ -23,7 +23,7 @@ public class CarSelectionView : View
 
     void Start()
     {
-
+        Cursor.visible = true;
     }
 
     void Update()
@@ -57,6 +57,7 @@ public class CarSelectionView : View
 
     private void HideModels()
     {
+        Cursor.visible = false;
         rollyModel.SetActive(false);
         fleetModel.SetActive(false);
         stewieModel.SetActive(false);

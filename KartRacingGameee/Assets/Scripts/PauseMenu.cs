@@ -31,6 +31,7 @@ public class PauseMenu : MonoBehaviour
         {
             if (isPaused)
             {
+                Cursor.visible = false;
                 ResumeGame();  // If paused, resume the game
             }
             else
@@ -43,6 +44,7 @@ public class PauseMenu : MonoBehaviour
 
     void PauseGame()
     {
+        Cursor.visible = true;
         // Check if a "Player" object exists before pausing
         if (GameObject.Find("Player") == null)
         {
@@ -60,6 +62,7 @@ public class PauseMenu : MonoBehaviour
 
     void ResumeGame()
     {
+        Cursor.visible = false;
         PlaySound(_buttonClickSound);
         pauseMenuCanvas.SetActive(false);
 
